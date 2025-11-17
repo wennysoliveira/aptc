@@ -1,0 +1,111 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  senha     String
+  role      Role     @default(ASSOCIADO)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  associado Associado?
+
+  @@map("users")
+}
+
+model Associado {
+  id            String    @id @default(cuid())
+  nome          String
+  email         String    @unique
+  telefone      String?
+  cpf           String    @unique
+  endereco      String?
+  cidade        String?
+  estado        String?
+  cep           String?
+  dataNascimento DateTime?
+  userId        String    @unique
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  associacoes  Associacao[]
+  cursos       AssociadoCurso[]
+
+  @@map("associados")
+}
+
+model Curso {
+  id        String   @id @default(cuid())
+  nome      String
+  tipo      TipoCurso
+  descricao String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  associados AssociadoCurso[]
+
+  @@map("cursos")
+}
+
+model Associacao {
+  id          String        @id @default(cuid())
+  associadoId String
+  dataInicio  DateTime
+  dataValidade DateTime
+  valorPago   Float
+  status      StatusAssociacao @default(ATIVA)
+  observacoes String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // Relations
+  associado Associado @relation(fields: [associadoId], references: [id], onDelete: Cascade)
+
+  @@map("associacoes")
+}
+
+model AssociadoCurso {
+  id           String   @id @default(cuid())
+  associadoId  String
+  cursoId      String
+  dataFormacao DateTime?
+  instituicao  String?
+  createdAt    DateTime @default(now())
+
+  // Relations
+  associado Associado @relation(fields: [associadoId], references: [id], onDelete: Cascade)
+  curso     Curso     @relation(fields: [cursoId], references: [id], onDelete: Cascade)
+
+  @@unique([associadoId, cursoId])
+  @@map("associado_cursos")
+}
+
+enum Role {
+  ADMIN
+  ASSOCIADO
+}
+
+enum TipoCurso {
+  PSICANALISTA
+  TERAPEUTA
+}
+
+enum StatusAssociacao {
+  ATIVA
+  VENCIDA
+  CANCELADA
+}
